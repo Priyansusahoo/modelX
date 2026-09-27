@@ -71,8 +71,14 @@ export function LoginForm() {
       setFieldErrors({})
 
       try {
-        await login(result.data)
-        navigate(ROUTES.DASHBOARD, { replace: true })
+        const loginResult = await login(result.data)
+        if (loginResult.type === 'MFA_REQUIRED') {
+          navigate(ROUTES.MFA_VERIFY, {
+            state: { challenge: loginResult.challenge },
+          })
+        } else {
+          navigate(ROUTES.DASHBOARD, { replace: true })
+        }
       } catch {
         // Backend error handled by authError
       }
@@ -94,9 +100,7 @@ export function LoginForm() {
 
       try {
         await register(result.data)
-        setMode('login')
-        setPassword('')
-        setSuccessMessage('Registration successful! Please sign in with your credentials.')
+        navigate(`${ROUTES.VERIFY_EMAIL}?email=${encodeURIComponent(result.data.email)}`)
       } catch {
         // Backend error handled by authError
       }
@@ -169,7 +173,21 @@ export function LoginForm() {
               clipRule="evenodd"
             />
           </svg>
-          <span>{authError}</span>
+          <div>
+            <span>{authError}</span>
+            {/disabled|verify|unverified/i.test(authError) && email && (
+              <button
+                type="button"
+                className={styles.switchModeBtn}
+                style={{ marginLeft: 6, textDecoration: 'underline' }}
+                onClick={() =>
+                  navigate(`${ROUTES.VERIFY_EMAIL}?email=${encodeURIComponent(email)}`)
+                }
+              >
+                Verify email now
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -298,7 +316,7 @@ export function LoginForm() {
             <button
               type="button"
               className={styles.forgotPassword}
-              onClick={() => alert('Password reset service will be sent to your email.')}
+              onClick={() => navigate(ROUTES.FORGOT_PASSWORD)}
             >
               Forgot password?
             </button>

@@ -1,0 +1,12 @@
+language: "en-US"
+tone_instructions: "Be concise, constructive, and prioritize security, React 19 best practices, and clean architecture."
+reviews:
+  profile: "assertive" # Options: "chill" or "assertive"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  auto_review:
+    enabled: true
+    drafts: false
+chat:
+  auto_reply: true
