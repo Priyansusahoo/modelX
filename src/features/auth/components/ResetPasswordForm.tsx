@@ -25,7 +25,9 @@ export function ResetPasswordForm() {
   const [searchParams] = useSearchParams()
   const { resetPassword, isLoading, error: authError, clearError } = useAuth()
 
-  const [email, setEmail] = useState(searchParams.get('email') || '')
+  const initialEmail = searchParams.get('email') || ''
+  const isEmailPrepopulated = Boolean(initialEmail)
+  const [email, setEmail] = useState(initialEmail)
   const [code, setCode] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -123,13 +125,31 @@ export function ResetPasswordForm() {
               placeholder="name@example.com"
               value={email}
               error={fieldErrors.email}
+              hint={
+                isEmailPrepopulated
+                  ? 'Account email locked for this password reset session'
+                  : undefined
+              }
               onChange={(e) => {
                 setEmail(e.target.value)
                 if (fieldErrors.email) {
                   setFieldErrors((prev) => ({ ...prev, email: '' }))
                 }
+                if (authError) clearError()
               }}
-              disabled={isLoading}
+              disabled={isLoading || isEmailPrepopulated}
+              rightElement={
+                isEmailPrepopulated ? (
+                  <button
+                    type="button"
+                    className={styles.changeEmailBtn}
+                    onClick={() => navigate(ROUTES.FORGOT_PASSWORD)}
+                    title="Change email address"
+                  >
+                    Change
+                  </button>
+                ) : undefined
+              }
             />
 
             <div className={styles.otpSection}>
@@ -142,12 +162,19 @@ export function ResetPasswordForm() {
                   if (fieldErrors.code) {
                     setFieldErrors((prev) => ({ ...prev, code: '' }))
                   }
+                  if (authError) clearError()
                 }}
                 disabled={isLoading}
                 hasError={Boolean(fieldErrors.code)}
+                aria-describedby={fieldErrors.code ? 'code-error' : undefined}
               />
               {fieldErrors.code && (
-                <span className={styles.alertIcon} style={{ color: 'var(--color-danger)', fontSize: 12 }}>
+                <span
+                  id="code-error"
+                  className={styles.alertIcon}
+                  style={{ color: 'var(--color-danger)', fontSize: 12 }}
+                  role="alert"
+                >
                   {fieldErrors.code}
                 </span>
               )}
@@ -165,6 +192,7 @@ export function ResetPasswordForm() {
                 if (fieldErrors.newPassword) {
                   setFieldErrors((prev) => ({ ...prev, newPassword: '' }))
                 }
+                if (authError) clearError()
               }}
               disabled={isLoading}
               rightElement={
@@ -172,7 +200,6 @@ export function ResetPasswordForm() {
                   type="button"
                   className={styles.toggleVisibility}
                   onClick={() => setShowPassword(!showPassword)}
-                  tabIndex={-1}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
@@ -213,6 +240,7 @@ export function ResetPasswordForm() {
                 if (fieldErrors.confirmPassword) {
                   setFieldErrors((prev) => ({ ...prev, confirmPassword: '' }))
                 }
+                if (authError) clearError()
               }}
               disabled={isLoading}
             />

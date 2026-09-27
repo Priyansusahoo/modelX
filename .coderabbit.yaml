@@ -1,4 +1,3 @@
-version: "2"
 language: "en-US"
 tone_instructions: "Be concise, constructive, and prioritize security, React 19 best practices, and clean architecture."
 reviews:

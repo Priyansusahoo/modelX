@@ -1,5 +1,6 @@
 import {
   useRef,
+  useState,
   type ClipboardEvent,
   type KeyboardEvent,
   type ChangeEvent,
@@ -16,6 +17,7 @@ export interface OtpInputProps {
   hasError?: boolean
   className?: string
   'aria-label'?: string
+  'aria-describedby'?: string
 }
 
 export function OtpInput({
@@ -28,11 +30,21 @@ export function OtpInput({
   hasError = false,
   className,
   'aria-label': ariaLabel = 'One-time verification code',
+  'aria-describedby': ariaDescribedBy,
 }: OtpInputProps) {
   const inputsRef = useRef<(HTMLInputElement | null)[]>([])
 
-  // Pad or slice string to array of characters
-  const digits = Array.from({ length }, (_, i) => value[i] || '')
+  const [prevValue, setPrevValue] = useState(value)
+  const [prevLength, setPrevLength] = useState(length)
+  const [slots, setSlots] = useState<string[]>(() =>
+    Array.from({ length }, (_, i) => value[i] || ''),
+  )
+
+  if (value !== prevValue || length !== prevLength) {
+    setPrevValue(value)
+    setPrevLength(length)
+    setSlots(Array.from({ length }, (_, i) => value[i] || ''))
+  }
 
   function focusInput(index: number) {
     const target = inputsRef.current[index]
@@ -42,55 +54,52 @@ export function OtpInput({
     }
   }
 
+  function updateSlots(nextSlots: string[], focusIndex?: number) {
+    setSlots(nextSlots)
+    const joined = nextSlots.join('')
+    onChange(joined)
+
+    if (focusIndex !== undefined && focusIndex >= 0 && focusIndex < length) {
+      focusInput(focusIndex)
+    }
+
+    if (nextSlots.length === length && nextSlots.every(Boolean) && onComplete) {
+      onComplete(joined)
+    }
+  }
+
   function handleInputChange(e: ChangeEvent<HTMLInputElement>, index: number) {
     const rawVal = e.target.value
-    // Extract only digits
     const cleanDigits = rawVal.replace(/\D/g, '')
 
     if (!cleanDigits) {
-      // Cleared input
-      const nextDigits = [...digits]
-      nextDigits[index] = ''
-      const nextValue = nextDigits.join('')
-      onChange(nextValue)
+      const nextSlots = [...slots]
+      nextSlots[index] = ''
+      updateSlots(nextSlots)
       return
     }
 
-    // Single digit entry
     const char = cleanDigits[cleanDigits.length - 1]
-    const nextDigits = [...digits]
-    nextDigits[index] = char
-    const nextValue = nextDigits.join('')
-    onChange(nextValue)
-
-    // Advance focus if not last digit
-    if (index < length - 1) {
-      focusInput(index + 1)
-    }
-
-    // If all digits filled, fire onComplete
-    if (nextValue.length === length && onComplete) {
-      onComplete(nextValue)
-    }
+    const nextSlots = [...slots]
+    nextSlots[index] = char
+    const nextFocusIndex = index < length - 1 ? index + 1 : index
+    updateSlots(nextSlots, nextFocusIndex)
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>, index: number) {
     if (disabled) return
 
     if (e.key === 'Backspace') {
-      if (!digits[index] && index > 0) {
-        // Current empty, back up and clear previous
+      if (!slots[index] && index > 0) {
         e.preventDefault()
-        const nextDigits = [...digits]
-        nextDigits[index - 1] = ''
-        onChange(nextDigits.join(''))
-        focusInput(index - 1)
-      } else if (digits[index]) {
-        // Clear current
+        const nextSlots = [...slots]
+        nextSlots[index - 1] = ''
+        updateSlots(nextSlots, index - 1)
+      } else if (slots[index]) {
         e.preventDefault()
-        const nextDigits = [...digits]
-        nextDigits[index] = ''
-        onChange(nextDigits.join(''))
+        const nextSlots = [...slots]
+        nextSlots[index] = ''
+        updateSlots(nextSlots)
       }
     } else if (e.key === 'ArrowLeft' && index > 0) {
       e.preventDefault()
@@ -109,13 +118,9 @@ export function OtpInput({
     const numericData = pasteData.replace(/\D/g, '').slice(0, length)
 
     if (numericData.length > 0) {
-      onChange(numericData)
+      const nextSlots = Array.from({ length }, (_, i) => numericData[i] || '')
       const nextFocusIndex = Math.min(numericData.length, length - 1)
-      focusInput(nextFocusIndex)
-
-      if (numericData.length === length && onComplete) {
-        onComplete(numericData)
-      }
+      updateSlots(nextSlots, nextFocusIndex)
     }
   }
 
@@ -124,8 +129,9 @@ export function OtpInput({
       className={[styles.container, className ?? ''].filter(Boolean).join(' ')}
       role="group"
       aria-label={ariaLabel}
+      aria-describedby={ariaDescribedBy}
     >
-      {digits.map((digit, index) => (
+      {slots.map((digit, index) => (
         <input
           key={index}
           ref={(el) => {
@@ -142,6 +148,8 @@ export function OtpInput({
           onChange={(e) => handleInputChange(e, index)}
           onKeyDown={(e) => handleKeyDown(e, index)}
           onPaste={handlePaste}
+          aria-invalid={hasError}
+          aria-describedby={ariaDescribedBy}
           className={[
             styles.digitInput,
             digit ? styles.hasValue : '',

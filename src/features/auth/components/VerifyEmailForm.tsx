@@ -40,15 +40,16 @@ export function VerifyEmailForm() {
     return () => clearInterval(timer)
   }, [])
 
-  async function handleVerify(e?: FormEvent) {
+  async function handleVerify(e?: FormEvent, completedCode?: string) {
     if (e) e.preventDefault()
-    if (!email || code.length !== 6 || isLoading) return
+    const activeCode = completedCode || code
+    if (!email || activeCode.length !== 6 || isLoading) return
 
     clearError()
     setResendMessage(null)
 
     try {
-      const result = await verifyEmail({ email, code })
+      const result = await verifyEmail({ email, code: activeCode })
       if (result.session) {
         navigate(ROUTES.DASHBOARD, { replace: true })
       } else {
@@ -151,8 +152,8 @@ export function VerifyEmailForm() {
                 setCode(val)
                 if (authError) clearError()
               }}
-              onComplete={() => {
-                handleVerify()
+              onComplete={(val) => {
+                handleVerify(undefined, val)
               }}
               disabled={isLoading}
               hasError={Boolean(authError)}

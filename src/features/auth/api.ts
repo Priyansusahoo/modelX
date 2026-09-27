@@ -1,4 +1,4 @@
-import { apiClient, ApiError } from '../../lib/apiClient'
+import { apiClient } from '../../lib/apiClient'
 import { createUserFromToken } from '../../lib/jwt'
 import type {
   AuthResponse,
@@ -101,6 +101,10 @@ export async function verifyMfaRequest(payload: MfaVerificationPayload): Promise
     body: JSON.stringify(payload),
   })
 
+  if (!response?.token) {
+    throw new Error('MFA verification failed: No authentication token received from server')
+  }
+
   const user = createUserFromToken(response.token)
   return {
     token: response.token,
@@ -116,82 +120,40 @@ export async function resendMfaRequest(payload: MfaResendPayload): Promise<{ mes
 }
 
 export async function forgotPasswordRequest(payload: ForgotPasswordPayload): Promise<{ message: string }> {
-  try {
-    return await apiClient<{ message: string }>('/v1/api/auth/password/forgot', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    })
-  } catch (err) {
-    if (err instanceof ApiError && (err.status === 404 || err.status === 405)) {
-      console.warn('Backend password reset endpoint not yet mounted, using fallback response.')
-      return { message: `Verification code sent to ${payload.email}` }
-    }
-    throw err
-  }
+  return await apiClient<{ message: string }>('/v1/api/auth/password/forgot', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 }
 
 export async function resetPasswordRequest(payload: ResetPasswordPayload): Promise<{ message: string }> {
-  try {
-    return await apiClient<{ message: string }>('/v1/api/auth/password/reset', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    })
-  } catch (err) {
-    if (err instanceof ApiError && (err.status === 404 || err.status === 405)) {
-      console.warn('Backend password reset endpoint not yet mounted, using fallback response.')
-      return { message: 'Password has been reset successfully.' }
-    }
-    throw err
-  }
+  return await apiClient<{ message: string }>('/v1/api/auth/password/reset', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 }
 
 export async function verifyEmailRequest(payload: VerifyEmailPayload): Promise<{ message: string; session?: AuthSession }> {
-  const endpoints = ['/v1/api/auth/verify-email', '/v1/api/auth/register/verify']
+  const response = await apiClient<AuthResponse & { message?: string }>('/v1/api/auth/verify-email', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 
-  for (const endpoint of endpoints) {
-    try {
-      const response = await apiClient<AuthResponse & { message?: string }>(endpoint, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      })
-      let session: AuthSession | undefined
-      if (response.token) {
-        const user = createUserFromToken(response.token, payload.email)
-        session = { token: response.token, user }
-      }
-      return {
-        message: response.message || 'Email successfully verified. Registration complete!',
-        session,
-      }
-    } catch (err) {
-      if (err instanceof ApiError && (err.status === 404 || err.status === 405)) {
-        continue
-      }
-      throw err
-    }
+  let session: AuthSession | undefined
+  if (response.token) {
+    const user = createUserFromToken(response.token, payload.email)
+    session = { token: response.token, user }
   }
 
-  // Fallback in dev if backend endpoint is still being rolled out
-  console.warn('Backend email verification endpoint not yet mounted, using fallback response.')
-  return { message: 'Email successfully verified. Your account is now active.' }
+  return {
+    message: response.message || 'Email successfully verified. Registration complete!',
+    session,
+  }
 }
 
 export async function resendEmailVerificationRequest(email: string): Promise<{ message: string }> {
-  const endpoints = ['/v1/api/auth/verify-email/resend', '/v1/api/auth/register/resend']
-
-  for (const endpoint of endpoints) {
-    try {
-      return await apiClient<{ message: string }>(endpoint, {
-        method: 'POST',
-        body: JSON.stringify({ email }),
-      })
-    } catch (err) {
-      if (err instanceof ApiError && (err.status === 404 || err.status === 405)) {
-        continue
-      }
-      throw err
-    }
-  }
-
-  return { message: `Verification code resent to ${email}` }
+  return await apiClient<{ message: string }>('/v1/api/auth/verify-email/resend', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
 }

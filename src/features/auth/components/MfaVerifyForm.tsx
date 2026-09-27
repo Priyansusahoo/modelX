@@ -44,15 +44,16 @@ export function MfaVerifyForm() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
-  async function handleVerify(e?: FormEvent) {
+  async function handleVerify(e?: FormEvent, completedCode?: string) {
     if (e) e.preventDefault()
-    if (code.length !== 6 || isLoading || !challenge) return
+    const activeCode = completedCode || code
+    if (activeCode.length !== 6 || isLoading || !challenge) return
 
     clearError()
     setResendMessage(null)
 
     try {
-      await verifyMfa(code, challenge.challengeToken)
+      await verifyMfa(activeCode, challenge.challengeToken)
       navigate(ROUTES.DASHBOARD, { replace: true })
     } catch {
       // Backend error displayed through authError
@@ -158,9 +159,9 @@ export function MfaVerifyForm() {
             setCode(val)
             if (authError) clearError()
           }}
-          onComplete={() => {
+          onComplete={(val) => {
             // Auto submit when all 6 digits entered
-            handleVerify()
+            handleVerify(undefined, val)
           }}
           disabled={isLoading || expiresIn === 0}
           hasError={Boolean(authError)}
