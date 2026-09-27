@@ -1,0 +1,63 @@
+.container {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.digitInput {
+  width: 48px;
+  height: 56px;
+  text-align: center;
+  font-family: var(--font-mono, monospace);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  background-color: var(--color-bg-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform 120ms ease;
+  caret-color: var(--color-accent);
+}
+
+.digitInput:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  transform: translateY(-1px);
+}
+
+.digitInput.hasValue {
+  border-color: var(--color-border-hover);
+  background-color: var(--color-bg-surface);
+}
+
+.hasError {
+  border-color: var(--color-danger) !important;
+  background-color: var(--color-danger-subtle) !important;
+  color: var(--color-danger-fg) !important;
+}
+
+.hasError:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(--color-bg-subtle);
+}
+
+@media (max-width: 480px) {
+  .container {
+    gap: 6px;
+  }
+
+  .digitInput {
+    width: 40px;
+    height: 48px;
+    font-size: 18px;
+  }
+}

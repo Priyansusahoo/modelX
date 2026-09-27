@@ -6,3 +6,6 @@ export type { InputProps } from './Input'
 
 export { Card } from './Card'
 export type { CardProps } from './Card'
+
+export { OtpInput } from './OtpInput'
+export type { OtpInputProps } from './OtpInput'
