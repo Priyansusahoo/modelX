@@ -105,7 +105,7 @@ export function ResetPasswordForm() {
           </div>
 
           {authError && (
-            <div className={[styles.alert, styles.errorAlert].join(' ')} role="alert">
+            <div id="reset-auth-error" className={[styles.alert, styles.errorAlert].join(' ')} role="alert">
               <svg className={styles.alertIcon} viewBox="0 0 20 20" fill="currentColor">
                 <path
                   fillRule="evenodd"
@@ -165,14 +165,19 @@ export function ResetPasswordForm() {
                   if (authError) clearError()
                 }}
                 disabled={isLoading}
-                hasError={Boolean(fieldErrors.code)}
-                aria-describedby={fieldErrors.code ? 'code-error' : undefined}
+                hasError={Boolean(fieldErrors.code || authError)}
+                aria-describedby={
+                  fieldErrors.code
+                    ? 'code-error'
+                    : authError
+                    ? 'reset-auth-error'
+                    : undefined
+                }
               />
               {fieldErrors.code && (
                 <span
                   id="code-error"
-                  className={styles.alertIcon}
-                  style={{ color: 'var(--color-danger)', fontSize: 12 }}
+                  className={styles.fieldError}
                   role="alert"
                 >
                   {fieldErrors.code}

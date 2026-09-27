@@ -118,7 +118,7 @@ export function VerifyEmailForm() {
           )}
 
           {authError && (
-            <div className={[styles.alert, styles.errorAlert].join(' ')} role="alert">
+            <div id="email-code-error" className={[styles.alert, styles.errorAlert].join(' ')} role="alert">
               <svg className={styles.alertIcon} viewBox="0 0 20 20" fill="currentColor">
                 <path
                   fillRule="evenodd"
@@ -157,6 +157,7 @@ export function VerifyEmailForm() {
               }}
               disabled={isLoading}
               hasError={Boolean(authError)}
+              aria-describedby={authError ? 'email-code-error' : undefined}
             />
           </div>
 

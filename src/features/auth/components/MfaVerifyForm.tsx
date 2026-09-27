@@ -139,7 +139,7 @@ export function MfaVerifyForm() {
       )}
 
       {authError && (
-        <div className={[styles.alert, styles.errorAlert].join(' ')} role="alert">
+        <div id="mfa-code-error" className={[styles.alert, styles.errorAlert].join(' ')} role="alert">
           <svg className={styles.alertIcon} viewBox="0 0 20 20" fill="currentColor">
             <path
               fillRule="evenodd"
@@ -165,6 +165,7 @@ export function MfaVerifyForm() {
           }}
           disabled={isLoading || expiresIn === 0}
           hasError={Boolean(authError)}
+          aria-describedby={authError ? 'mfa-code-error' : undefined}
         />
 
         <div className={styles.timerBar}>
